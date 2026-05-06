@@ -57,7 +57,7 @@ const MyGeneration = () => {
         {/* Empty State */}
         {!loading && thumbnails.length === 0 && (
           <div className="text-center py-24">
-            <h3 className="text-lg font-semibold text-zinc-200">No thumbnails yet</h3>
+            <h3 className="text-lg font-semibold text-zinc-200">No thumbnails created yet</h3>
             <p className="text-sm text-zinc-400 mt-2" >Generate your first thumbnail to see it here.</p>
 
           </div>
