@@ -57,7 +57,7 @@ const Generate = () => {
             <div className="p-6 rounded-2xl bg-white/8 border border-white/12 shadow-xl space-y-6">
             <div>
               <h2 className="text-xl font-bold text-zinc-100 mb-8">Create Your Thumbnail</h2>
-              <p className="text-sm text-zinc-400">Describe your vision and let AI bring it to life.</p>
+              <p className="text-sm text-zinc-400">Describe your vision and let AI bring an creative  to life.</p>
             </div>
             <div className="space-y-6">
               {/* Title Input */}
