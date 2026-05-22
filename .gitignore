@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+functions/node_modules/
+
+# Build outputs
+client/dist/
+server/dist/
+functions/lib/
+
+# Environment files - NEVER commit secrets
+server/.env
+functions/.env
+*.env.local
+*.env.production
+
+# Firebase
+.firebase/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

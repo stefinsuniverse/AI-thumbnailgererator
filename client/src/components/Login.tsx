@@ -1,15 +1,22 @@
 import { useState } from "react";
 import SoftBackdrop from "./SoftBackdrop";
-
+import { useAuth } from "../context/AuthContext.js";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [state, setState] = useState("login")
+  const { login, register } = useAuth();
+  const navigate = useNavigate();
+  
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: ""
   })
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -17,22 +24,53 @@ const Login = () => {
       [name]: value,
     }));
   }
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setLoading(true);
+
+    try {
+      if (state === "login") {
+        const res = await login(formData.email, formData.password);
+        if (res.success) {
+          navigate("/generate");
+        } else {
+          setErrorMessage(res.message);
+        }
+      } else {
+        const res = await register(formData.name, formData.email, formData.password);
+        if (res.success) {
+          navigate("/generate");
+        } else {
+          setErrorMessage(res.message);
+        }
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <>
     <SoftBackdrop />
-      <div className='min-h-screen flex items-center justify-center'>
+      <div className='min-h-screen flex items-center justify-center pt-20 px-4'>
         <form
           onSubmit={handleSubmit}
-          className="w-full sm:w-87.5 text-center bg-white/6 border border-white/10 rounded-2xl px-8">
-          <h1 className="text-white text-3xl mt-10 font-medium">
+          className="w-full max-w-sm text-center bg-white/6 border border-white/10 rounded-2xl px-8 py-4 shadow-2xl">
+          <h1 className="text-white text-3xl mt-6 font-medium">
             {state === "login" ? "Login" : "Sign up"}
           </h1>
 
-          <p className="text-gray-400 text-sm mt-2">Please sign in to continue</p>
+          <p className="text-gray-400 text-sm mt-2">Please {state === "login" ? "sign in" : "register"} to continue</p>
+
+          {errorMessage && (
+            <div className="mt-4 p-3 rounded-lg bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs text-left">
+              {errorMessage}
+            </div>
+          )}
 
           {state !== "login" && (
             <div className="flex items-center mt-6 w-full bg-white/5 ring-2 ring-white/10 focus-within:ring-pink-500/60 h-12 rounded-full overflow-hidden pl-6 gap-2 transition-all ">
@@ -52,16 +90,16 @@ const Login = () => {
           </div>
 
           <div className="mt-4 text-left">
-            <button className="text-sm text-pink-400 hover:underline">
-              Forget password?
+            <button type="button" className="text-sm text-pink-400 hover:underline">
+              Forgot password?
             </button>
           </div>
 
-          <button type="submit" className="mt-2 w-full h-11 rounded-full text-white bg-pink-600 hover:bg-pink-500 transition " >
-            {state === "login" ? "Login" : "Sign up"}
+          <button type="submit" disabled={loading} className="mt-4 w-full h-11 rounded-full text-white bg-pink-600 hover:bg-pink-500 disabled:bg-pink-800 disabled:text-zinc-400 transition" >
+            {loading ? "Please wait..." : (state === "login" ? "Login" : "Sign up")}
           </button>
 
-          <p onClick={() => setState(prev => prev === "login" ? "register" : "login")} className="text-gray-400 text-sm mt-3 mb-11 cursor-pointer" >
+          <p onClick={() => { setState(prev => prev === "login" ? "register" : "login"); setErrorMessage(""); }} className="text-gray-400 text-sm mt-3 mb-10 cursor-pointer" >
             {state === "login" ? "Don't have an account?" : "Already have an account?"}
             <span className="text-pink-400 hover:underline ml-1">click here</span>
           </p>

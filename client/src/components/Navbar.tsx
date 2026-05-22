@@ -3,11 +3,18 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { navlinks } from "../data/navlinks";
 import type { INavLink } from "../types";
-import { Link, NavLink, useNavigate} from "react-router-dom";
+import { Link, useNavigate} from "react-router-dom";
+import { useAuth } from "../context/AuthContext.js";
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
-    const navigate = useNavigate()
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/');
+    };
 
     return (
         <>
@@ -22,30 +29,49 @@ export default function Navbar() {
                  </Link>
 
                 <div className="hidden md:flex items-center gap-8 transition duration-500">
-                    
                     <Link to='/' className="hover:text-pink-300 transition">Home</Link>
                     <Link to='/generate' className="hover:text-pink-300 transition">Generate</Link>
-                    <Link to='/my-generation' className="hover:text-pink-300 transition">My Gererations</Link>
+                    {user && (
+                        <Link to='/my-generation' className="hover:text-pink-300 transition">My Generations</Link>
+                    )}
                     <Link to='#' className="hover:text-pink-300 transition">Contact</Link>
-
-                    
-                
                 </div>
 
-                <button onClick={()=> navigate('/login')} className="hidden md:block px-6 py-2.5 bg-pink-600 hover:bg-pink-700 active:scale-95 transition-all rounded-full">
-                    Get Started
-                </button>
+                {user ? (
+                    <div className="hidden md:flex items-center gap-4">
+                        <span className="text-zinc-300 font-medium text-sm">Hi, {user.name}</span>
+                        <button onClick={handleLogout} className="px-5 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 active:scale-95 transition-all rounded-full border border-white/10">
+                            Logout
+                        </button>
+                    </div>
+                ) : (
+                    <button onClick={()=> navigate('/login')} className="hidden md:block px-6 py-2.5 bg-pink-600 hover:bg-pink-700 active:scale-95 transition-all rounded-full">
+                        Get Started
+                    </button>
+                )}
                 <button onClick={() => setIsOpen(true)} className="md:hidden">
                     <MenuIcon size={26} className="active:scale-90 transition" />
                 </button>
             </motion.nav>
 
-            <div className={`fixed inset-0 z-100 bg-black/40 backdrop-blur flex flex-col items-center justify-center text-lg gap-8 md:hidden transition-transform duration-400 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+            <div className={`fixed inset-0 z-100 bg-black/90 backdrop-blur flex flex-col items-center justify-center text-lg gap-8 md:hidden transition-transform duration-400 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
                 <Link onClick={() => setIsOpen(false)} to='/'>Home</Link>
                 <Link onClick={() => setIsOpen(false)} to='/generate'>Generate</Link>
-                <Link onClick={() => setIsOpen(false)} to='/my-generation'>My Generations</Link>
-                <Link onClick={() => setIsOpen(false)} to='#'>My Contact</Link>
-                <Link onClick={() => setIsOpen(false)} to='/login'>Login</Link>
+                {user && (
+                    <Link onClick={() => setIsOpen(false)} to='/my-generation'>My Generations</Link>
+                )}
+                <Link onClick={() => setIsOpen(false)} to='#'>Contact</Link>
+                
+                {user ? (
+                    <>
+                        <span className="text-zinc-400">Logged in as {user.name}</span>
+                        <button onClick={() => { setIsOpen(false); handleLogout(); }} className="px-6 py-2 bg-zinc-800 rounded-full text-white border border-white/10">
+                            Logout
+                        </button>
+                    </>
+                ) : (
+                    <Link onClick={() => setIsOpen(false)} to='/login'>Login</Link>
+                )}
 
                 <button onClick={() => setIsOpen(false)} className="active:ring-3 active:ring-white aspect-square size-10 p-1 items-center justify-center bg-pink-600 hover:bg-pink-700 transition text-white rounded-md flex">
                     <XIcon />

@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
 import Thumbnail from '../models/Thumbnail.js';
-import { GenerateContentConfig, HarmBlockThreshold, HarmCategory } from '@google/genai';
 import ai from '../config/ai.js';
 import path from 'node:path';
-import { fstat } from 'node:fs';
-import {} from 'cloudinary';
+import fs from 'node:fs';
+import { v2 as cloudinary } from 'cloudinary';
 
 const stylePrompts =  {
     'Bold & Graphic': 'eye-catching thumbnail, bold typography, vibrant colors, expressive facial reaction, dramatic lighting, high contrast, click-worthy composition, professional style',
@@ -50,25 +49,6 @@ export const generateThumbnail = async (req: Request, res: Response) => {
             isGenerating: true
         });
 
-        const model ='gemini-3-pro-image-preview';
-
-        const generationConfig: GenerateContentConfig = {
-            maxOutputTokens: 32768,
-            temperature: 1,
-            topP: 0.95,
-            responseModalities:['IMAGE'],
-            imageConfig: {
-                aspectRatio: aspect_ratio || '16:9',
-                imageSize: '1K',
-            },
-            safetySettings: [
-                {category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold:HarmBlockThreshold.OFF},
-                {category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.OFF },
-                {category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.OFF },
-                {category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.OFF}
-            ]
-        };
-
         let prompt = `Create a ${stylePrompts[style as keyof typeof stylePrompts]} for: "${title}" `;
 
         if (color_scheme) {
@@ -81,27 +61,24 @@ export const generateThumbnail = async (req: Request, res: Response) => {
 
         prompt += `The thumbnail should be ${aspect_ratio}, visually stunning, and designed to maximize click-through rate. Make it bold, professional, and impossible to ignore.`; 
 
-        // Generate the image using the AI model
-        const response: any = await ai.models.generateContent({
-            model,
-            contents: [prompt],
-            config: generationConfig,
+        // Generate the image using the modern AI model and method
+        const response = await ai.models.generateImages({
+            model: 'imagen-3.0-generate-002',
+            prompt: prompt,
+            config: {
+                numberOfImages: 1,
+                aspectRatio: aspect_ratio || '16:9',
+                outputMimeType: 'image/png',
+            }
         });
 
         // Check if the response is valid
-        if (!response?.candidates?.[0]?.content?.parts){
-            throw new Error('Unexpected response ');
+        if (!response?.generatedImages?.[0]?.image?.imageBytes) {
+            throw new Error('Unexpected response from Image generation model');
         }
 
-        const parts = response.candidates[0].content.parts;
-
-        let finalBuffer: Buffer | null = null;   
-
-        for (const part of parts) {
-            if (part.inlineData){
-                finalBuffer = Buffer.from(part.inlineData.data, 'base64');
-            }
-        }
+        const base64Data = response.generatedImages[0].image.imageBytes;
+        const finalBuffer = Buffer.from(base64Data, 'base64');
 
         const filename = `final-output-${Date.now()}.png`;
         const filePath = path.join('images', filename);
@@ -110,9 +87,9 @@ export const generateThumbnail = async (req: Request, res: Response) => {
         fs.mkdirSync('images', { recursive: true });
         
         // Write the final image to the file
-        fs.writeFileSync(filePath, finalBuffer!);
+        fs.writeFileSync(filePath, finalBuffer);
 
-        const uploadResult = await cloudinary.uploader.uploader(filePath, {
+        const uploadResult = await cloudinary.uploader.upload(filePath, {
             resource_type: 'image',
         });
 
